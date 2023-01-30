@@ -82,6 +82,36 @@ gdt64:
 
 section .text
 bits 64
+global _keyboard_handler
+global _read_port
+global _write_port
+global _load_idt
+extern kmain 		;this is defined in the c file
+extern keyboard_handler_main
+
+_read_port:
+	mov edx, [esp + 4]
+			;al is the lower 8 bits of eax
+	in al, dx	;dx is the lower 16 bits of edx
+	ret
+
+_write_port:
+	mov   edx, [esp + 4]    
+	mov   al, [esp + 4 + 4]  
+	out   dx, al  
+	ret
+
+_load_idt:
+	mov edx, [esp + 4]
+	lidt [edx]
+	sti 				;turn on interrupts
+	ret
+
+_keyboard_handler:                 
+	call    keyboard_handler_main
+	iretd
+
+
 long_mode_start:
 
 	; clear screen
@@ -92,15 +122,30 @@ long_mode_start:
 	cmp rcx, 80 * 25 * 2
 	jne .clear_screen
 
-	mov rax, 0x2f6c2f652f722f67 ; grel	
-	mov [0xb8000], rax
-	mov rax, 0x2f202f532f4f2f6c ; lOS 
-	mov [0xb8000+8], rax
-	mov rax, 0x2f592f412f4b2f4f ; OKAY
-	mov [0xb8000+16], rax
+	cli 				;block interrupts
+	mov esp, stack_space
+	call kmain
+	hlt 				;halt the CPU
+
+	;mov rax, 0x2f6c2f652f722f67 ; grel	
+	;mov [0xb8000], rax
+	;mov rax, 0x2f202f532f4f2f6c ; lOS 
+	;mov [0xb8000+8], rax
+	;mov rax, 0x2f592f412f4b2f4f ; OKAY
+	;mov [0xb8000+16], rax
 
 
-    hlt
+	; clear screen
+	;mov rcx, 0
+	;.clear_screen2:
+	;mov qword [0xb8000 + rcx], 0x0000000000000000
+	;add rcx, 8
+	;cmp rcx, 80 * 25 * 2
+	;jne .clear_screen2
 
+	;cli ; disable interrupts
+	;hlt
+
+stack_space:
 
 	
