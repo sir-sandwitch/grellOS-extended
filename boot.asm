@@ -1,7 +1,35 @@
 global start
+global _keyboard_handler
+global _read_port
+global _write_port
+global _load_idt
 
 section .text
 bits 32
+_read_port:
+	mov edx, [esp + 4]
+			;al is the lower 8 bits of eax
+	in al, dx	;dx is the lower 16 bits of edx
+	ret
+
+_write_port:
+	mov   edx, [esp + 4]    
+	mov   al, [esp + 4 + 4]  
+	out   dx, al  
+	ret
+
+_load_idt:
+	cli 				;turn off interrupts
+	mov edx, [esp + 4]
+	lidt [edx]
+	sti 				;turn on interrupts
+	ret
+
+_keyboard_handler:                 
+	call    keyboard_handler_main
+	iretd
+
+
 start:
     ; Point the first entry of the level 4 page table to the first entry in the
     ; p3 table
@@ -82,34 +110,9 @@ gdt64:
 
 section .text
 bits 64
-global _keyboard_handler
-global _read_port
-global _write_port
-global _load_idt
+
 extern kmain 		;this is defined in the c file
 extern keyboard_handler_main
-
-_read_port:
-	mov edx, [esp + 4]
-			;al is the lower 8 bits of eax
-	in al, dx	;dx is the lower 16 bits of edx
-	ret
-
-_write_port:
-	mov   edx, [esp + 4]    
-	mov   al, [esp + 4 + 4]  
-	out   dx, al  
-	ret
-
-_load_idt:
-	mov edx, [esp + 4]
-	lidt [edx]
-	sti 				;turn on interrupts
-	ret
-
-_keyboard_handler:                 
-	call    keyboard_handler_main
-	iretd
 
 
 long_mode_start:
