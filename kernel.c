@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include <stdint.h>
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
@@ -34,11 +35,13 @@ char command = ' ';
 
 
 struct IDT_entry {
-	unsigned short int offset_lowerbits;
-	unsigned short int selector;
-	unsigned char zero;
-	unsigned char type_attr;
-	unsigned short int offset_higherbits;
+   uint16_t offset_lowerbits;        // offset bits 0..15
+   uint16_t selector;        // a code segment selector in GDT or LDT
+   uint8_t  ist;             // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
+   uint8_t  type_attributes; // gate type, dpl, and p fields
+   uint16_t offset_midbits;        // offset bits 16..31
+   uint32_t offset_higherbits;        // offset bits 32..63
+   uint32_t zero;            // reserved
 };
 
 struct IDT_entry IDT[IDT_SIZE];
@@ -55,7 +58,7 @@ void idt_init(void)
 	IDT[0x21].offset_lowerbits = keyboard_address & 0xffff;
 	IDT[0x21].selector = KERNEL_CODE_SEGMENT_OFFSET;
 	IDT[0x21].zero = 0;
-	IDT[0x21].type_attr = INTERRUPT_GATE;
+	IDT[0x21].type_attributes = INTERRUPT_GATE;
 	IDT[0x21].offset_higherbits = (keyboard_address & 0xffff0000) >> 16;
 
 	/*     Ports
