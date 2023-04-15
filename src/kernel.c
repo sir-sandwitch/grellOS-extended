@@ -20,6 +20,7 @@
 void keyboard_handler() {
     uint8_t scancode = inb(KBD_DATA_PORT);
     // handle the scancode
+    kprint("a", 0, 0, 0x0f);
 }
 
 /* this function writes a single character out to the screen */
