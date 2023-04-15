@@ -1,0 +1,16 @@
+
+
+[package]
+name = "grellos"
+version = "0.1.0"
+edition = "2021"
+authors = ["boysmeller <boysmeller@hotmail.com>"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["staticlib"]
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
