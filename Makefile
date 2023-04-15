@@ -17,10 +17,10 @@ target/kernel.o: src/kernel.c
 target/kernel.bin: target/multiboot_header.o target/boot.o src/asm/linker.ld target/kernel.o
 	ld -n -o target/kernel.bin -T src/asm/linker.ld target/multiboot_header.o target/boot.o target/kernel.o
 
-target/os.iso: build/kernel.bin src/asm/grub.cfg
+target/os.iso: target/kernel.bin src/asm/grub.cfg
 	mkdir -p target/isofiles/boot/grub
 	cp src/asm/grub.cfg target/isofiles/boot/grub
-	cp build/kernel.bin target/isofiles/boot/
+	cp target/kernel.bin target/isofiles/boot/
 	grub-mkrescue -o target/os.iso target/isofiles
 
 cargo:
