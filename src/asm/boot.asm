@@ -102,24 +102,35 @@ long_mode_start:
   
 	hlt 				;halt the CPU
 
-	;mov rax, 0x2f6c2f652f722f67 ; grel	
-	;mov [0xb8000], rax
-	;mov rax, 0x2f202f532f4f2f6c ; lOS 
-	;mov [0xb8000+8], rax
-	;mov rax, 0x2f592f412f4b2f4f ; OKAY
-	;mov [0xb8000+16], rax
+; define the IDT entry for the keyboard interrupt
+keyboard_interrupt:
+    push rax
+    mov al, 0x20
+    out 0x20, al
+    pop rax
+    iretq
 
+section .idt
+align 8
+idt:
+    dq 0 ; interrupt 0
+    dq 0 ; interrupt 1
+    dq 0 ; interrupt 2
+    dq 0 ; interrupt 3
+    ; ... other interrupts ...
+    dq keyboard_interrupt ; interrupt 33
+    dq 0 ; interrupt 34
+    ; ... other interrupts ...
+    dq 0 ; interrupt 255
+idt_size:
+    dw $ - idt - 1
+idt_addr:
+    dq idt
 
-	; clear screen
-	;mov rcx, 0
-	;.clear_screen2:
-	;mov qword [0xb8000 + rcx], 0x0000000000000000
-	;add rcx, 8
-	;cmp rcx, 80 * 25 * 2
-	;jne .clear_screen2
+; load the IDT
+lidt [idt_addr]
 
-	;cli ; disable interrupts
-	;hlt
+sti ; enable interrupts
 
 stack_space:
 

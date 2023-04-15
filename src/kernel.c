@@ -10,6 +10,17 @@
 /* the VGA framebuffer starts at 0xb8000 */
 #define VIDEO_MEMORY 0xb8000
 
+#include <stdint.h>
+#include <stddef.h>
+#include "include/keyboard.h"
+
+
+#define KBD_DATA_PORT 0x60
+
+void keyboard_handler() {
+    uint8_t scancode = inb(KBD_DATA_PORT);
+    // handle the scancode
+}
 
 /* this function writes a single character out to the screen */
 void kprint(char *c, int line, int column, int color) {
