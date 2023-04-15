@@ -1,5 +1,9 @@
 /* compiled with -ffreestanding in gcc */
 
+#include <stdint.h>
+#include <stddef.h>
+#include "include/keyboard.h"
+#include "include/io.h"
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
@@ -9,10 +13,6 @@
 
 /* the VGA framebuffer starts at 0xb8000 */
 #define VIDEO_MEMORY 0xb8000
-
-#include <stdint.h>
-#include <stddef.h>
-#include "include/keyboard.h"
 
 
 #define KBD_DATA_PORT 0x60

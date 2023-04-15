@@ -12,7 +12,7 @@ target/boot.o: src/asm/boot.asm
 
 target/kernel.o: src/kernel.c
 	mkdir -p target
-	gcc -c src/kernel.c -o target/kernel.o -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+	gcc -c src/kernel.c -o target/kernel.o -std=gnu99 -ffreestanding -Wall -Wextra -Iinclude
 
 target/kernel.bin: target/multiboot_header.o target/boot.o src/asm/linker.ld target/kernel.o
 	ld -n -o target/kernel.bin -T src/asm/linker.ld target/multiboot_header.o target/boot.o target/kernel.o
