@@ -85,6 +85,52 @@ gdt64:
 section .text
 bits 64
 
+%macro isr_err_stub 1
+isr_stub_%+%1:
+    call exception_handler
+    iret 
+%endmacro
+; if writing for 64-bit, use iretq instead
+%macro isr_no_err_stub 1
+isr_stub_%+%1:
+    call exception_handler
+    iret
+%endmacro
+
+extern exception_handler
+isr_no_err_stub 0
+isr_no_err_stub 1
+isr_no_err_stub 2
+isr_no_err_stub 3
+isr_no_err_stub 4
+isr_no_err_stub 5
+isr_no_err_stub 6
+isr_no_err_stub 7
+isr_err_stub    8
+isr_no_err_stub 9
+isr_err_stub    10
+isr_err_stub    11
+isr_err_stub    12
+isr_err_stub    13
+isr_err_stub    14
+isr_no_err_stub 15
+isr_no_err_stub 16
+isr_err_stub    17
+isr_no_err_stub 18
+isr_no_err_stub 19
+isr_no_err_stub 20
+isr_no_err_stub 21
+isr_no_err_stub 22
+isr_no_err_stub 23
+isr_no_err_stub 24
+isr_no_err_stub 25
+isr_no_err_stub 26
+isr_no_err_stub 27
+isr_no_err_stub 28
+isr_no_err_stub 29
+isr_err_stub    30
+isr_no_err_stub 31
+
 
 long_mode_start:
 	; clear screen
@@ -100,7 +146,12 @@ long_mode_start:
 
 	cli ; disable interrupts
   
-	hlt 				;halt the CPU
+;  jmp loop ; jump to loop
+
+;	hlt 				;halt the CPU
+
+loop:
+  jmp loop
 
 ; define the IDT entry for the keyboard interrupt
 keyboard_interrupt:
@@ -110,27 +161,27 @@ keyboard_interrupt:
     pop rax
     iretq
 
-section .idt
-align 8
-idt:
-    dq 0 ; interrupt 0
-    dq 0 ; interrupt 1
-    dq 0 ; interrupt 2
-    dq 0 ; interrupt 3
-    ; ... other interrupts ...
-    dq keyboard_interrupt ; interrupt 33
-    dq 0 ; interrupt 34
-    ; ... other interrupts ...
-    dq 0 ; interrupt 255
-idt_size:
-    dw $ - idt - 1
-idt_addr:
-    dq idt
+;section .idt
+;align 8
+;idt:
+;    dq 0 ; interrupt 0
+;    dq 0 ; interrupt 1
+;    dq 0 ; interrupt 2
+;    dq 0 ; interrupt 3
+;    ; ... other interrupts ...
+;    dq keyboard_interrupt ; interrupt 33
+;    dq 0 ; interrupt 34
+;    ; ... other interrupts ...
+;    dq 0 ; interrupt 255
+;idt_size:
+;    dw $ - idt - 1
+;idt_addr:
+;    dq idt
 
 ; load the IDT
-lidt [idt_addr]
+;lidt [idt_addr]
 
-sti ; enable interrupts
+;sti ; enable interrupts
 
 stack_space:
 
