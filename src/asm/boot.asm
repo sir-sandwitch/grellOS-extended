@@ -72,6 +72,7 @@ p2_table:
 	resb 4096
 
 section .rodata
+global gdt64
 gdt64:
     dq 0
 .code: equ $ - gdt64
@@ -98,6 +99,8 @@ isr_stub_%+%1:
 %endmacro
 
 extern exception_handler
+global isr_stub_table
+isr_stub_table:
 isr_no_err_stub 0
 isr_no_err_stub 1
 isr_no_err_stub 2
@@ -142,7 +145,7 @@ long_mode_start:
 	jne .clear_screen
   
   ; call kmain function
-  call kmain
+    call kmain
 
 	cli ; disable interrupts
   
