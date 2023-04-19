@@ -29,10 +29,32 @@ bool keyboard_enabled = false;
 int cursor_pos_line = 0;
 int cursor_pos_column = 0;
 
+/* init pic */
+void pic_init(void){
+    /* send init command (0x11) */
+    outb(0x20, 0x11);
+    outb(0xA0, 0x11);
+    /* remap pic past 0x20 */
+    outb(0x21, 0x20);
+    outb(0xA1, 0x28);
+    /* enable cascading */
+    outb(0x21, 0x04);
+    outb(0xA1, 0x02);
+    /* set 8086 mode */
+    outb(0x21, 0x01);
+    outb(0xA1, 0x01);
+    /* mask all but keyboard interrupt */
+    outb(0x21, 0xFD);
+    outb(0xA1, 0xFF);
+}
+
 void keyboard_init(void){
-  outb(0x21, 0xFD);
-  outb(0xA1, 0xFF);
-  keyboard_enabled = true;
+    /* enable keyboard */
+    outb(0x64, 0xAE);
+    /* enable interrupts */
+    outb(0x21, 0xFD);
+    outb(0x20, 0x20);
+    keyboard_enabled = true;
 }
 
 /* defines an IDT entry */
@@ -188,6 +210,7 @@ void kprint_string(char *s, int startLine, int startColumn, int color) {
 
 void kmain(void) {
     idt_init();
+    pic_init();
     //keyboard_init();
     kprint_string("Welcome to ", 3, 0, 0x0f);
     kprint_string("grellOS", 3, 11, 0x0d);
