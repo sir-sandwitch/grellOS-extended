@@ -1,12 +1,37 @@
 /* compiled with -ffreestanding in gcc, so std functions are limited. if something needs implementation, make a header in ./include/ */
 
+#ifndef STDINT_INCLUDE
 #include <stdint.h>
+#define STDINT_INCLUDE
+#endif
+#ifndef STDDEF_INCLUDE
 #include <stddef.h>
+#define STDDEF_INCLUDE
+#endif
+#ifndef STDBOOL_INCLUDE
 #include <stdbool.h>
+#define STDBOOL_INCLUDE
+#endif
+#ifndef KEYBOARD_INCLUDE
 #include "include/keyboard.h"
+#define KEYBOARD_INCLUDE
+#endif
+#ifndef IO_INCLUDE
 #include "include/io.h"
+#define IO_INCLUDE
+#endif
+#ifndef IDT_INCLUDE
 #include "include/idt.h"
+#define IDT_INCLUDE
+#endif
+#ifndef TIMER_INCLUDE
 #include "include/timer.h"
+#define TIMER_INCLUDE
+#endif
+#ifndef APIC_INCLUDE
+#include "include/apic.h"
+#define APIC_INCLUDE
+#endif
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
@@ -209,8 +234,14 @@ void kprint_string(char *s, int startLine, int startColumn, int color) {
 }
 
 void kmain(void) {
-    idt_init();
-    pic_init();
+    if(check_apic()){
+        kprint_string("APIC detected, disabling...", 0, 0, 0x0f);
+        apic_disable();
+    } else {
+        kprint_string("APIC not detected, booting", 0, 0, 0x0f);
+    }
+    //idt_init();
+   // pic_init();
     //keyboard_init();
     kprint_string("Welcome to ", 3, 0, 0x0f);
     kprint_string("grellOS", 3, 11, 0x0d);

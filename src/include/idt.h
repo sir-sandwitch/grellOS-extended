@@ -1,7 +1,11 @@
 /* taken from https://github.com/austanss/skylight/blob/trunk/glass/src/cpu/interrupts/idt.h all credit to them*/
 
 #pragma once
+
+#ifndef STDINT_INCLUDE
 #include <stdint.h>
+#define STDINT_INCLUDE
+#endif
 
 #define IDT_MAX_DESCRIPTORS 			256
 #define IDT_CPU_EXCEPTION_COUNT			32
