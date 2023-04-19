@@ -1,4 +1,4 @@
-/* compiled with -ffreestanding in gcc */
+/* compiled with -ffreestanding in gcc, so std functions are limited. if something needs implementation, make a header in ./include/ */
 
 #include <stdint.h>
 #include <stddef.h>
@@ -6,6 +6,7 @@
 #include "include/keyboard.h"
 #include "include/io.h"
 #include "include/idt.h"
+#include "include/timer.h"
 
 /* there are 25 lines each of 80 columns; each element takes 2 bytes */
 #define LINES 25
@@ -27,6 +28,12 @@ bool keyboard_enabled = false;
 
 int cursor_pos_line = 0;
 int cursor_pos_column = 0;
+
+void keyboard_init(void){
+  outb(0x21, 0xFD);
+  outb(0xA1, 0xFF);
+  keyboard_enabled = true;
+}
 
 /* defines an IDT entry */
 typedef struct {
@@ -52,8 +59,6 @@ static idt_entry_t idt[256]; // Create an array of IDT entries; aligned for perf
 
 /* define idtr */
 static idtr_t idtr;
-
-/* define isr stub table */
 
 /* general exception handler */
 __attribute__((noreturn))
@@ -85,6 +90,7 @@ extern void* isr_stub_table[];
  
 void idt_init(void);
 void idt_init() {
+    __asm__ volatile ("cli"); // clear the interrupt flag
     idtr.base = (uintptr_t)&idt[0];
     idtr.limit = (uint16_t)sizeof(idt_desc_t) * IDT_MAX_DESCRIPTORS - 1;
  
@@ -92,19 +98,38 @@ void idt_init() {
         idt_set_descriptor(vector, isr_stub_table[vector], 0x8E);
         vectors[vector] = true;
     }
+
+    /* timer */
+    isr_stub_table[32] = &timer_handler;
+    idt_set_descriptor(32, isr_stub_table[32], 0x8E);
+    vectors[32] = true;
+
+    /* cmos timer */
+    isr_stub_table[40] = &cmos_handler;
+    idt_set_descriptor(40, isr_stub_table[40], 0x8E);
+    vectors[40] = true;
+
+    /* keyboard */
     isr_stub_table[33] = &keyboard_handler;
     idt_set_descriptor(33, isr_stub_table[33], 0x8E);
     vectors[33] = true;
+    if(!keyboard_enabled){
+        keyboard_init();
+    }
  
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
 }
 
-
-void keyboard_init(void){
-    outb(0x21, 0xFD);
-    keyboard_enabled = true;
+/* handle timer interrupt */
+void timer_handler() {
+    outb(0x20, 0x20);
 }
+
+void cmos_handler() {
+    outb(0x20, 0x20);
+}
+
 
 void keyboard_handler(void){
     unsigned char status;
@@ -118,9 +143,10 @@ void keyboard_handler(void){
     /* Lowest bit of status will be set if buffer is not empty */
     if (status & 0x01) {
         keycode = inb(KBD_DATA_PORT);
-        if(keycode < 0)
+        if(keycode < 0){
             return;
-        kprint_string((unsigned char) keyboard_map[keycode], cursor_pos_line, cursor_pos_column, 0x0f);
+        }
+        kprint((unsigned char) keyboard_map[keycode], cursor_pos_line, cursor_pos_column, 0x0f);
         cursor_pos_column++;
         if (cursor_pos_column >= COLUMNS_IN_LINE) {
             cursor_pos_column = 0;
