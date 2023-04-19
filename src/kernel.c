@@ -160,9 +160,9 @@ void idt_init() {
     isr_stub_table[33] = &keyboard_handler;
     idt_set_descriptor(33, isr_stub_table[33], 0x8E);
     vectors[33] = true;
-    if(!keyboard_enabled){
-        keyboard_init();
-    }
+    // if(!keyboard_enabled){
+    //     keyboard_init();
+    // }
  
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
@@ -233,16 +233,42 @@ void kprint_string(char *s, int startLine, int startColumn, int color) {
     }
 }
 
+kprint_ok(char *message, int line){
+    kprint("[", line, 0, 0x0f);
+    kprint_string("OK", line, 1, 0x0a);
+    kprint_string("]   ", line, 3, 0x0f);
+    kprint_string(message, line, 7, 0x0f);
+}
+
+kprint_fail(char *message, int line){
+    kprint("[", line, 0, 0x0f);
+    kprint_string("FAIL", line, 1, 0x0c);
+    kprint_string("]  ", line, 5, 0x0f);
+    kprint_string(message, line, 7, 0x0f);
+}
+
 void kmain(void) {
+    int line = 0;
     if(check_apic()){
-        kprint_string("APIC detected, disabling...", 0, 0, 0x0f);
+        kprint_ok("APIC check", line);
+        line++;
         apic_disable();
+        kprint_ok("APIC disable", line);
+        line++;
     } else {
-        kprint_string("APIC not detected, booting", 0, 0, 0x0f);
+        kprint_fail("APIC check", line);
+        line++;
+        kprint_ok("APIC disable", line);
+        line++;
     }
-    //idt_init();
-   // pic_init();
+    pic_init();
+    kprint_ok("PIC init", line);
+    line++;
+    idt_init();
+    kprint_ok("IDT init", line);
+    line++;
+    //pic_init();
     //keyboard_init();
-    kprint_string("Welcome to ", 3, 0, 0x0f);
-    kprint_string("grellOS", 3, 11, 0x0d);
+    kprint_string("Welcome to ", line, 0, 0x0f);
+    kprint_string("grellOS", line, 11, 0x0d);
 }
