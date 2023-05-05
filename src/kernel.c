@@ -73,14 +73,63 @@ void pic_init(void){
     outb(0xA1, 0xFF);
 }
 
-void keyboard_init(void){
-    /* enable keyboard */
-    outb(0x64, 0xAE);
-    /* enable interrupts */
-    outb(0x21, 0xFD);
-    outb(0x20, 0x20);
-    keyboard_enabled = true;
+int checkCanWriteKB(void){
+    return inb(KBD_STATUS_PORT) & 0b00000010;
 }
+
+int checkCanReadKB(void){
+    return inb(KBD_STATUS_PORT) & 0b00000001;
+}
+
+int keyboard_init(void){
+  // enable keyboard
+  while(!checkCanWriteKB());
+  outb(0x64, 0xED);
+  // wait for response
+  while(!checkCanWriteKB());
+  outb(0x64, 0xF2);
+  while(!checkCanReadKB());
+  int scancode = inb(0x60);
+  if(scancode == 0xFA){
+    keyboard_enabled = true;
+  }
+  else{
+    keyboard_enabled = false;
+    return 0;
+  }
+  while(!checkCanWriteKB());
+  outb(0x64, 0xF3);
+  while(!checkCanWriteKB());
+  outb(0x60, 0x20);
+  while(!checkCanReadKB());
+  scancode = inb(0x60);
+  if(scancode != 0xFA){
+    keyboard_enabled = false;
+    return 0;
+  }
+  while(!checkCanWriteKB());
+  outb(0x64, 0xF4);
+  while(!checkCanReadKB());
+  scancode = inb(0x60);
+  if(scancode != 0xFA){
+    keyboard_enabled = false;
+    return 0;
+  }
+  while(!checkCanWriteKB());
+  outb(0x64, 0xF3);
+  while(!checkCanReadKB());
+  scancode = inb(0x60);
+  if(scancode != 0xFA){
+    keyboard_enabled = false;
+    return 0;
+  }
+  while(!checkCanWriteKB());
+  outb(0x60, 0x00);
+
+  return 1;
+
+}
+
 
 /* defines an IDT entry */
 typedef struct {
@@ -160,9 +209,6 @@ void idt_init() {
     isr_stub_table[33] = &keyboard_handler;
     idt_set_descriptor(33, isr_stub_table[33], 0x8E);
     vectors[33] = true;
-    // if(!keyboard_enabled){
-    //     keyboard_init();
-    // }
  
     __asm__ volatile ("lidt %0" : : "m"(idtr)); // load the new IDT
     __asm__ volatile ("sti"); // set the interrupt flag
@@ -179,12 +225,11 @@ void cmos_handler() {
 
 
 void keyboard_handler(void){
+    kprint_string("keyboard", 0, 0, 0x0f);
     unsigned char status;
     char keycode;
 
-    /* write EOI */
-    outb(0x20, 0x20);
-
+    
     status = inb(KBD_STATUS_PORT);
     
     /* Lowest bit of status will be set if buffer is not empty */
@@ -193,7 +238,8 @@ void keyboard_handler(void){
         if(keycode < 0){
             return;
         }
-        kprint((unsigned char) keyboard_map[keycode], cursor_pos_line, cursor_pos_column, 0x0f);
+        kprint_string("keystroke", 0, 0, 0x0f);
+        kprint((unsigned char*) keyboard_map[keycode], cursor_pos_line, cursor_pos_column, 0x0f);
         cursor_pos_column++;
         if (cursor_pos_column >= COLUMNS_IN_LINE) {
             cursor_pos_column = 0;
@@ -204,6 +250,7 @@ void keyboard_handler(void){
             }
         }
     }
+    outb(0x20, 0x20);
 }
 
 /* this function writes a single character out to the screen */
@@ -247,6 +294,7 @@ kprint_fail(char *message, int line){
     kprint_string(message, line, 7, 0x0f);
 }
 
+
 void kmain(void) {
     int line = 0;
     if(check_apic()){
@@ -264,11 +312,16 @@ void kmain(void) {
     pic_init();
     kprint_ok("PIC init", line);
     line++;
+    
     idt_init();
     kprint_ok("IDT init", line);
     line++;
-    //pic_init();
-    //keyboard_init();
+    
+    keyboard_init();
+    kprint_ok("Keyboard init", line);
+
     kprint_string("Welcome to ", line, 0, 0x0f);
     kprint_string("grellOS", line, 11, 0x0d);
+
 }
+

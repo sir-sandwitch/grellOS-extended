@@ -45,4 +45,4 @@ unsigned char keyboard_map[128] =
 };
 
 void keyboard_handler(void);
-void keyboard_init(void);
+int keyboard_init(void);
